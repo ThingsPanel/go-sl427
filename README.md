@@ -2,6 +2,10 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/ThingsPanel/go-sl427.svg)](https://pkg.go.dev/github.com/ThingsPanel/go-sl427)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ThingsPanel/go-sl427)](https://goreportcard.com/report/github.com/ThingsPanel/go-sl427)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ThingsPanel/go-sl427.svg)](https://pkg.go.dev/github.com/ThingsPanel/go-sl427)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ThingsPanel/go-sl427)](https://goreportcard.com/report/github.com/ThingsPanel/go-sl427)
+[![Coverage Status](https://coveralls.io/repos/github/ThingsPanel/go-sl427/badge.svg?branch=main)](https://coveralls.io/github/ThingsPanel/go-sl427?branch=main)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/ThingsPanel/go-sl427)](https://go.dev/doc/devel/release)
 
 go-sl427是一个用Go语言实现的SL427-2021水资源监测数据传输规约库。该库提供了完整的协议实现，支持监测站和数据中心服务器的开发。
 
