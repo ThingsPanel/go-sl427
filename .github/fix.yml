@@ -1,0 +1,26 @@
+name: Fix Branch CI
+
+on:
+  push:
+    branches:
+      - 'fix/*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.22'
+          
+      - name: Run Tests
+        run: go test -v ./...
+        
+      - name: Run Linter
+        run: golangci-lint run

@@ -1,0 +1,31 @@
+name: Feature Branch CI
+
+on:
+  push:
+    branches: [ 'feature/*' ]
+  pull_request:
+    branches: [ 'feature/*' ]
+
+jobs:
+  test:
+    name: Test Feature
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+          
+      - name: Install dependencies
+        run: go mod download
+        
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          
+      - name: Run Tests
+        run: go test -v ./...
