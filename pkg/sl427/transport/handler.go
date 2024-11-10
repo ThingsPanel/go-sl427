@@ -3,7 +3,7 @@ package transport
 
 import (
 	"bufio"
-	"encoding/binary"
+	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -133,61 +133,73 @@ func (h *handlerImpl) Handle() error {
 	}
 }
 
+// pkg/sl427/server/handler.go
 func (h *handlerImpl) readPacket() (*packet.Packet, error) {
+	var buf bytes.Buffer
+
 	// 1. 查找起始标识
 	startByte, err := h.reader.ReadByte()
 	if err != nil {
 		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取起始字节失败", err)
 	}
+	buf.WriteByte(startByte)
 
-	for startByte != types.StartFlag {
-		startByte, err = h.reader.ReadByte()
-		if err != nil {
-			return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "查找起始标识失败", err)
-		}
+	// 确保是起始字节
+	if startByte != types.StartFlag {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "无效的起始标识", nil)
 	}
 
-	// 2. 读取地址和命令(5字节)
-	headerBuf := make([]byte, 5)
-	if _, err := io.ReadFull(h.reader, headerBuf); err != nil {
-		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取地址和命令失败", err)
-	}
-
-	// 3. 读取长度字段(2字节)
-	lengthBuf := make([]byte, 2)
-	if _, err := io.ReadFull(h.reader, lengthBuf); err != nil {
-		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取长度字段失败", err)
-	}
-	length := binary.BigEndian.Uint16(lengthBuf)
-
-	// 4. 验证长度合理性
-	if length < packet.MinPacketLen || length > uint16(h.config.MaxPacketSize) {
-		return nil, sl427.WrapError(sl427.ErrCodeInvalidLength,
-			fmt.Sprintf("无效的报文长度: %d", length), nil)
-	}
-
-	// 5. 创建完整的数据缓冲区并复制已读取的数据
-	fullPacket := make([]byte, length)
-	fullPacket[0] = startByte        // 起始标识
-	copy(fullPacket[1:6], headerBuf) // 地址和命令
-	copy(fullPacket[6:8], lengthBuf) // 长度字段
-
-	// 6. 读取剩余数据(包括序列号、数据域、CRC和结束标识)
-	remainingLength := int(length) - 8 // 减去已读取的字节
-	if _, err := io.ReadFull(h.reader, fullPacket[8:length]); err != nil {
-		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed,
-			fmt.Sprintf("读取数据包剩余部分失败,期望%d字节", remainingLength), err)
-	}
-
-	// 7. 记录调试信息
-	h.logger.Printf("接收到完整数据包: %X", fullPacket)
-
-	// 8. 解析数据包
-	p, err := packet.Parse(fullPacket)
+	// 2. 读取长度字节
+	length, err := h.reader.ReadByte()
 	if err != nil {
-		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "解析数据包失败", err)
+		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取长度字节失败", err)
+	}
+	buf.WriteByte(length)
+
+	// 3. 读取第二个起始标识
+	startByte2, err := h.reader.ReadByte()
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取第二个起始标识失败", err)
+	}
+	buf.WriteByte(startByte2)
+
+	if startByte2 != types.StartFlag {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "无效的第二个起始标识", nil)
 	}
 
+	// 4. 计算需要读取的剩余字节数
+	// 总长度 = 用户数据区长度 + 帧头(3) + CS(1) + 结束符(1)
+	remainingBytes := int(length) + 2 // +2是CS和结束符
+
+	// 5. 读取剩余数据
+	data := make([]byte, remainingBytes)
+	n, err := io.ReadFull(h.reader, data)
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取剩余数据失败", err)
+	}
+	if n != remainingBytes {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidLength,
+			fmt.Sprintf("数据长度不匹配,期望:%d,实际:%d", remainingBytes, n), nil)
+	}
+	buf.Write(data)
+
+	// 6. 使用codec解码完整的帧
+	frame, err := codec.NewPacketCodec().DecodePacket(buf.Bytes())
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "解码失败", err)
+	}
+
+	// 7. 解析用户数据
+	p, err := packet.ParseUserData(frame)
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "解析失败", err)
+	}
+
+	// // 8. 更新统计信息
+	// h.metrics.PacketsReceived++
+	// h.metrics.LastReceiveTime = time.Now()
+
+	h.logger.Printf("成功读取数据包: 长度=%d bytes", buf.Len())
 	return p, nil
 }
 
