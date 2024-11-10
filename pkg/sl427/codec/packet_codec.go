@@ -47,7 +47,7 @@ func (c *PacketCodec) DecodePacket(data []byte) (*types.Frame, error) {
 	expectedCS := c.calculateCS(userData)
 	actualCS := data[len(data)-2]
 	if expectedCS != actualCS {
-		return nil, fmt.Errorf("CS check failed")
+		return nil, fmt.Errorf("CS 校验失败，期望 %X, 实际 %X", expectedCS, actualCS)
 	}
 
 	// 6. 构建Frame对象
@@ -88,12 +88,23 @@ func (c *PacketCodec) EncodePacket(frame *types.Frame) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// calculateCS 计算用户数据区的CRC校验值
-// 生成多项式: X7+X6+X5+X2+1
+// calculateCS 计算用户数据区的CRC校验
+// 生成多项式: X7+X6+X5+X2+1 = 1110 0100
 func (c *PacketCodec) calculateCS(data []byte) byte {
-	var cs byte
+	var crc byte
+	const poly = 0xE4 // 生成多项式: X7+X6+X5+X2+1 = 1110 0100
+
 	for _, b := range data {
-		cs ^= b
+		crc ^= b // 与输入字节异或
+
+		for i := 0; i < 8; i++ {
+			if (crc & 0x80) != 0 { // 检查最高位是1
+				crc = (crc << 1) ^ poly // 左移并异或多项式
+			} else {
+				crc = crc << 1 // 只左移
+			}
+		}
 	}
-	return cs
+
+	return crc & 0x7F // 返回低7位作为校验值
 }

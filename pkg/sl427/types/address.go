@@ -47,6 +47,8 @@ type Address interface {
 	String() string
 	// Validate 验证地址有效性
 	Validate() error
+	// 获站点地址或站点编码
+	GetAddress() string
 }
 
 // AddressV1 方式1的地址实现(行政区划码 + 站点地址)
@@ -104,6 +106,10 @@ func (a *AddressV1) Validate() error {
 	}
 }
 
+func (a *AddressV1) GetAddress() string {
+	return fmt.Sprintf("%s%04d", a.AdminCode, a.StationID)
+}
+
 // NewAddressV1 创建方式1的地址
 func NewAddressV1(adminCode []byte, stationID uint16) (*AddressV1, error) {
 	addr := &AddressV1{
@@ -157,6 +163,32 @@ func (a *AddressV2) Validate() error {
 	}
 
 	return nil
+}
+
+func (a *AddressV2) GetAddress() string {
+	// StationCode是4字节,每个字节分为高4位和低4位,总共是8位16进制数字
+	// 例如: 0x80 0x00 0x00 0x01 应该解析为 "80000001"
+
+	result := make([]byte, 8) // 8个16进制数字
+	for i := 0; i < 4; i++ {
+		// 处理每个字节的高4位和低4位
+		high := (a.StationCode[i] >> 4) & 0x0F // 取高4位
+		low := a.StationCode[i] & 0x0F         // 取低4位
+
+		// 转换为ASCII字符
+		result[i*2] = hexChar(high)
+		result[i*2+1] = hexChar(low)
+	}
+
+	return string(result)
+}
+
+// hexChar 将4位二进制转换为16进制字符
+func hexChar(n byte) byte {
+	if n < 10 {
+		return '0' + n // 0-9
+	}
+	return 'A' + (n - 10) // A-F
 }
 
 // NewAddressV2 创建方式2的地址

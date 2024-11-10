@@ -1,0 +1,2276 @@
+<documents>
+<document index="README.md">
+<source>README.md</source>
+<document_content># go-sl427
+
+[![License](https://img.shields.io/github/license/ThingsPanel/go-sl427)](LICENSE)
+[![Release](https://img.shields.io/github/release/ThingsPanel/go-sl427.svg)](https://github.com/ThingsPanel/go-sl427/releases)
+[![GitHub Issues](https://img.shields.io/github/issues/ThingsPanel/go-sl427.svg)](https://github.com/ThingsPanel/go-sl427/issues)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ThingsPanel/go-sl427)](https://goreportcard.com/report/github.com/ThingsPanel/go-sl427)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ThingsPanel/go-sl427.svg)](https://pkg.go.dev/github.com/ThingsPanel/go-sl427)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/ThingsPanel/go-sl427)](https://go.dev/doc/devel/release)
+
+go-sl427是一个用Go语言实现的SL427-2021水资源监测数据传输规约库。该库提供了协议实现，支持监测站和数据中心服务器的开发。
+
+## 特性
+
+- 实现SL427-2021的S1链路协议规范
+- 支持监测站和服务器端开发
+- 提供灵活的配置选项
+- 内置监控指标收集
+- 支持自定义日志接口
+- 线程安全设计
+- 详细的错误处理
+
+## 完整性说明
+
+目前完成了协议框架的实现
+具体功能待完善
+
+- [x] S1 链路协议
+- [ ] S2 链路协议
+- [ ] S3 链路协议
+
+## 安装
+
+```bash
+go get github.com/ThingsPanel/go-sl427
+```
+
+## 快速开始
+
+### 监测站示例
+
+### 服务器示例
+
+## 核心组件
+
+- **station**: 监测站实现
+- **transport**: 网络传输层
+- **codec**: 数据编解码
+- **packet**: 数据包定义
+- **types**: 基础类型定义
+- **metrics**: 监控指标收集
+
+## 监控指标
+
+内置的监控指标包括：
+
+- 接收的数据包数量
+- 发送的数据包数量
+- 丢弃的数据包数量
+- 最后接收时间
+- 最后发送时间
+- 处理延迟
+
+## 错误处理
+
+库提供了统一的错误处理机制：
+
+```go
+if sl427.IsErrorCode(err, sl427.ErrCodeInvalidData) {
+    // 处理无效数据错误
+}
+```
+
+## 配置选项
+
+## 日志接口
+
+支持自定义日志实现：
+
+```go
+type CustomLogger struct {
+    // 自定义日志实现
+}
+
+func (l *CustomLogger) Printf(format string, v ...interface{}) {
+    // 实现日志记录
+}
+
+// 设置日志接口
+types.SetLogger(&CustomLogger{})
+```
+
+## 示例程序
+
+在 `cmd/examples` 目录下提供了完整的示例程序
+
+
+## 文档
+
+详细的文档和API参考请访问：[pkg.go.dev](https://pkg.go.dev/github.com/ThingsPanel/go-sl427)
+
+## 贡献指南
+
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开Pull Request
+
+## 许可证
+
+采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+
+## 支持
+
+如有问题或建议，请提交 [Issue](https://github.com/ThingsPanel/go-sl427/issues)。
+
+## 致谢
+
+感谢所有贡献者对项目的支持。
+</document_content>
+</document>
+<document index="cmd\merger\main.go">
+<source>cmd\merger\main.go</source>
+<document_content>package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+const (
+	// 项目名称，用于验证
+	PROJECT_NAME = "go-sl427"
+	// 项目源码所在的相对路径
+	PROJECT_PATH = "../../../" + PROJECT_NAME
+)
+
+// 允许的文件类型
+var allowedExtensions = map[string]bool{
+	".go":   true,
+	".mod":  true,
+	".yaml": true,
+	".yml":  true,
+	".md":   true,
+}
+
+func main() {
+	sourceDir, err := filepath.Abs(PROJECT_PATH)
+	if err != nil {
+		fmt.Printf("获取项目路径失败: %v\n", err)
+		return
+	}
+
+	// 验证目录名称
+	if !strings.HasSuffix(sourceDir, PROJECT_NAME) {
+		fmt.Printf("错误: 当前目录 %s 不是目标项目目录\n", sourceDir)
+		fmt.Printf("请确保在正确的位置执行此工具\n")
+		return
+	}
+
+	// 检查目录是否存在
+	if _, err := os.Stat(sourceDir); os.IsNotExist(err) {
+		fmt.Printf("错误: 项目目录不存在: %s\n", sourceDir)
+		fmt.Printf("请检查项目路径是否正确\n")
+		return
+	}
+
+	outputFile := fmt.Sprintf("%s_code_%s.txt", PROJECT_NAME, time.Now().Format("20060102_150405"))
+	out, err := os.Create(outputFile)
+	if err != nil {
+		fmt.Printf("创建输出文件失败: %v\n", err)
+		return
+	}
+	defer out.Close()
+
+	fmt.Printf("开始处理项目: %s\n", PROJECT_NAME)
+	fmt.Printf("项目路径: %s\n", sourceDir)
+
+	// 写入文档开始标签
+	fmt.Fprintf(out, "<documents>")
+
+	fileCount := 0
+	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 跳过隐藏文件和目录
+		if strings.HasPrefix(info.Name(), ".") {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// 跳过日志文件和目录
+		if strings.Contains(path, "logs") || strings.HasSuffix(path, ".log") {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// 如果是目录，继续遍历
+		if info.IsDir() {
+			return nil
+		}
+
+		// 检查文件类型
+		ext := strings.ToLower(filepath.Ext(path))
+		if !allowedExtensions[ext] {
+			return nil
+		}
+
+		// 获取相对路径
+		relPath, err := filepath.Rel(sourceDir, path)
+		if err != nil {
+			return fmt.Errorf("获取相对路径失败: %v", err)
+		}
+
+		// 写入文件信息
+		fmt.Fprintf(out, "\n<document index=\"%s\">\n", relPath)
+		fmt.Fprintf(out, "<source>%s</source>\n", relPath)
+		fmt.Fprintf(out, "<document_content>")
+
+		// 读取文件内容
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("读取文件 %s 失败: %v", path, err)
+		}
+
+		// 写入内容
+		fmt.Fprintf(out, "%s", content)
+		fmt.Fprintf(out, "</document_content>\n")
+		fmt.Fprintf(out, "</document>")
+
+		fileCount++
+		fmt.Printf("处理文件(%d): %s\n", fileCount, relPath)
+		return nil
+	})
+
+	fmt.Fprintf(out, "</documents>")
+
+	if err != nil {
+		fmt.Printf("\n处理过程中发生错误: %v\n", err)
+		return
+	}
+
+	fmt.Printf("\n处理完成!\n")
+	fmt.Printf("共处理 %d 个文件\n", fileCount)
+	fmt.Printf("输出文件: %s\n", outputFile)
+}
+</document_content>
+</document>
+<document index="docs\DEVELOPMENT.md">
+<source>docs\DEVELOPMENT.md</source>
+<document_content># 开发指南
+
+## 代码规范
+
+### 命名规范
+
+- 包名：使用小写，简短有意义的名称
+- 文件名：使用小写，用下划线分隔
+- 函数名：使用驼峰命名法
+- 常量名：使用全大写，下划线分隔
+
+### 注释规范
+
+- 包注释：每个包必须有包注释
+- 公开函数：必须有注释说明功能和参数
+- 复杂逻辑：需要有适当的注释说明
+
+### 错误处理
+
+- 错误应该被恰当处理，不能忽略
+- 错误信息应该清晰明了
+- 关键错误需要打印日志
+
+## 提交规范
+
+### 提交消息格式
+
+### 类型说明
+
+- feat: 新功能
+- fix: 修复问题
+- docs: 文档修改
+- style: 代码格式修改
+- refactor: 代码重构
+- test: 测试用例修改
+- chore: 其他修改
+
+### 分支管理
+
+- main: 主分支，保持稳定
+- develop: 开发分支
+- feature/*: 功能分支
+- fix/*: 修复分支
+
+## 测试规范
+
+### 单元测试
+
+- 所有包都应该有对应的测试
+- 测试覆盖率要求达到 80% 以上
+- 测试用例要清晰易懂
+
+### 集成测试
+
+- 需要测试完整的数据流程
+- 模拟实际使用场景
+- 包含性能测试
+
+### 文档测试
+
+- 确保示例代码可以正常运行
+- 文档中的命令可以正常执行
+
+## 版本发布
+
+### 版本号规则
+
+采用语义化版本 2.0.0：
+
+- 主版本号：不兼容的 API 修改
+- 次版本号：向下兼容的功能性新增
+- 修订号：向下兼容的问题修正
+
+### 发布流程
+
+1. 更新版本号
+2. 更新更新日志
+3. 创建发布标签
+4. 发布版本
+
+## 技术栈
+
+- Go 1.21+
+- 依赖管理：Go Modules
+</document_content>
+</document>
+<document index="docs\STRUCTURE.md">
+<source>docs\STRUCTURE.md</source>
+<document_content># 项目结构说明
+
+## 目录结构
+
+```go
+go-sl427/
+├─.github
+├─cmd
+│  ├─examples
+│  │  └─basic
+│  └─merger
+├─docs
+│  └─design
+│      └─dataflow
+└─pkg
+    └─sl427
+        ├─codec
+        ├─metrics
+        ├─packet
+        ├─protocol
+        ├─station
+        ├─transport
+        └─types
+```
+
+## 结构说明
+
+### 核心包结构
+
+1. **types包**
+   - 实现基础数据类型
+   - 定义错误类型
+   - 提供类型转换
+
+2. **packet包**
+   - 实现报文结构
+   - 提供报文构建方法
+   - 处理报文校验
+
+3. **codec包**
+   - 提供编解码能力
+   - 处理数据转换
+   - 实现CRC校验
+
+4. **station包**
+   - 实现测站功能
+   - 处理数据采集
+
+5. **transport包**
+   - 处理网络传输
+   - 管理连接状态
+   - 提供消息处理
+</document_content>
+</document>
+<document index="docs\design\dataflow\dfd.md">
+<source>docs\design\dataflow\dfd.md</source>
+<document_content># 第一层
+
+```mermaid
+flowchart TD
+    subgraph Input [输入层]
+        A[原始字节流] --> B[包分割器]
+    end
+
+    subgraph Protocol [协议处理层]
+        B --> C[报文头解析]
+        C --> D[报文体解析]
+        D --> E[数据校验]
+    end
+
+    subgraph DataProcess [数据处理层]
+        E --> F[数据类型转换]
+        F --> G[业务对象构建]
+    end
+
+    subgraph Output [输出层]
+        G --> H1[业务对象]
+        G --> H2[错误信息]
+    end
+
+    subgraph Encode [编码层]
+        I[业务对象] --> J[报文构建]
+        J --> K[校验码生成]
+        K --> L[字节流输出]
+    end
+```
+</document_content>
+</document>
+<document index="go.mod">
+<source>go.mod</source>
+<document_content>module github.com/ThingsPanel/go-sl427
+
+go 1.22
+
+require github.com/stretchr/testify v1.9.0
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+</document_content>
+</document>
+<document index="pkg\sl427\codec\packet_codec.go">
+<source>pkg\sl427\codec\packet_codec.go</source>
+<document_content>// pkg/sl427/codec/packet_codec.go
+package codec
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/ThingsPanel/go-sl427/pkg/sl427/types"
+)
+
+// PacketCodec 报文编解码器
+type PacketCodec struct{}
+
+// NewPacketCodec 创建新的编解码器实例
+func NewPacketCodec() *PacketCodec {
+	return &PacketCodec{}
+}
+
+// DecodePacket 将字节流解码为Frame
+func (c *PacketCodec) DecodePacket(data []byte) (*types.Frame, error) {
+	// 1. 基本长度检查
+	if len(data) < types.MinFrameLen {
+		return nil, fmt.Errorf("packet too short: %d", len(data))
+	}
+
+	// 2. 检查起始和结束标识
+	if data[0] != types.StartFlag || data[2] != types.StartFlag {
+		return nil, fmt.Errorf("invalid start flag")
+	}
+	if data[len(data)-1] != types.EndFlag {
+		return nil, fmt.Errorf("invalid end flag")
+	}
+
+	// 3. 获取用户数据区长度
+	length := data[1]
+	expectedLen := int(length) + 5 // 帧头(3) + CS(1) + 结束符(1)
+	if len(data) != expectedLen {
+		return nil, fmt.Errorf("invalid packet length")
+	}
+
+	// 4. 提取用户数据区
+	userDataStart := 3
+	userDataEnd := len(data) - 2
+	userData := data[userDataStart:userDataEnd]
+
+	// 5. 校验CS
+	expectedCS := c.calculateCS(userData)
+	actualCS := data[len(data)-2]
+	if expectedCS != actualCS {
+		return nil, fmt.Errorf("CS check failed")
+	}
+
+	// 6. 构建Frame对象
+	frame := &types.Frame{
+		Head: types.Header{
+			StartFlag1: data[0],
+			Length:     length,
+			StartFlag2: data[2],
+		},
+		UserDataRaw: userData,
+		CS:          actualCS,
+		EndFlag:     data[len(data)-1],
+	}
+
+	return frame, nil
+}
+
+// EncodePacket 将Frame编码为字节流
+func (c *PacketCodec) EncodePacket(frame *types.Frame) ([]byte, error) {
+	// 预分配缓冲区
+	buf := bytes.Buffer{}
+
+	// 1. 写入帧头
+	buf.WriteByte(frame.Head.StartFlag1)
+	buf.WriteByte(frame.Head.Length)
+	buf.WriteByte(frame.Head.StartFlag2)
+
+	// 2. 写入用户数据区
+	buf.Write(frame.UserDataRaw)
+
+	// 3. 计算并写入CS
+	cs := c.calculateCS(frame.UserDataRaw)
+	buf.WriteByte(cs)
+
+	// 4. 写入帧结束标识
+	buf.WriteByte(types.EndFlag)
+
+	return buf.Bytes(), nil
+}
+
+// calculateCS 计算用户数据区的CRC校验值
+// 生成多项式: X7+X6+X5+X2+1
+func (c *PacketCodec) calculateCS(data []byte) byte {
+	var cs byte
+	for _, b := range data {
+		cs ^= b
+	}
+	return cs
+}
+</document_content>
+</document>
+<document index="pkg\sl427\codec\packet_codec_test.go">
+<source>pkg\sl427\codec\packet_codec_test.go</source>
+<document_content>package codec
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestPacketCodec_Simple(t *testing.T) {
+	codec := NewPacketCodec()
+
+	// 构造用户数据区
+	userData := []byte{
+		0x80,                         // 控制域
+		0x01, 0x02, 0x03, 0x04, 0x05, // 地址域(5字节)
+		0xC0, // 功能码
+		0x01, // 数据域(1字节)
+	}
+
+	// 计算CS
+	cs := calculateCS(userData)
+
+	// 构造完整帧
+	packet := []byte{
+		0x68, // 起始符1
+		0x08, // L=8(用户数据区长度)
+		0x68, // 起始符2
+	}
+	packet = append(packet, userData...) // 用户数据区
+	packet = append(packet, cs)          // CS
+	packet = append(packet, 0x16)        // 结束符
+
+	// 1. 测试解码
+	frame, err := codec.DecodePacket(packet)
+	if err != nil {
+		t.Fatalf("解码失败: %v", err)
+	}
+
+	// 验证解码结果
+	if frame.Head.Length != 0x08 {
+		t.Errorf("长度字段错误: want 0x08, got 0x%02x", frame.Head.Length)
+	}
+
+	// 2. 测试编码
+	encoded, err := codec.EncodePacket(frame)
+	if err != nil {
+		t.Fatalf("编码失败: %v", err)
+	}
+
+	// 3. 验证长度
+	expectedLen := int(frame.Head.Length) + 5
+	if len(encoded) != expectedLen {
+		t.Errorf("编码后长度错误: want %d, got %d", expectedLen, len(encoded))
+	}
+}
+
+// 用于测试的CS计算函数，与codec中的实现保持一致
+func calculateCS(data []byte) byte {
+	var cs byte
+	for _, b := range data {
+		cs ^= b
+	}
+	return cs
+}
+
+func TestPacketCodec_DecodeInvalid(t *testing.T) {
+	codec := NewPacketCodec()
+
+	// 测试长度太短
+	_, err := codec.DecodePacket([]byte{0x68, 0x01})
+	if err == nil {
+		t.Error("应该检测出数据太短")
+	}
+}
+
+func TestPacketCodec_InvalidInput(t *testing.T) {
+	codec := NewPacketCodec()
+
+	t.Run("decode too short packet", func(t *testing.T) {
+		_, err := codec.DecodePacket([]byte{0x68, 0x01})
+		assert.Error(t, err)
+	})
+
+	t.Run("decode invalid start flag", func(t *testing.T) {
+		_, err := codec.DecodePacket([]byte{0x00, 0x01, 0x68, 0x01, 0x02, 0x03, 0x16})
+		assert.Error(t, err)
+	})
+
+	t.Run("decode invalid end flag", func(t *testing.T) {
+		_, err := codec.DecodePacket([]byte{0x68, 0x01, 0x68, 0x01, 0x02, 0x03, 0x00})
+		assert.Error(t, err)
+	})
+}
+</document_content>
+</document>
+<document index="pkg\sl427\codec\说明.md">
+<source>pkg\sl427\codec\说明.md</source>
+<document_content># 说明
+
+codec 包的主要职责是处理 SL427 协议的编解码工作，它是连接底层字节流和上层业务对象的桥梁。
+
+## 依赖结构
+
+pkg/sl427/codec
+  └── types  (仅依赖types包)
+</document_content>
+</document>
+<document index="pkg\sl427\doc.go">
+<source>pkg\sl427\doc.go</source>
+<document_content>// pkg/sl427/doc.go
+/*
+sl427包实现水资源监测的sl427 -2021协议。
+它为监测站和数据收集服务器提供功能。
+
+Example usage:
+    station := sl427.NewStation(sl427.Config{
+        Address: 0x01,
+        Server: "localhost:8080",
+        Interval: time.Second * 30,
+    })
+    if err := station.Start(); err != nil {
+        log.Fatal(err)
+    }
+    defer station.Stop()
+*/
+package sl427
+</document_content>
+</document>
+<document index="pkg\sl427\errors.go">
+<source>pkg\sl427\errors.go</source>
+<document_content>// pkg/sl427/errors.go
+package sl427
+
+import (
+	"errors"
+	"fmt"
+)
+
+// ErrorCode 定义错误码类型
+type ErrorCode int
+
+const (
+	// 基础错误码 (1000-1099)
+	ErrCodeInvalidData ErrorCode = 1000 + iota
+	ErrCodeInvalidLength
+	ErrCodeInvalidFormat
+	ErrCodeInvalidValue
+	ErrCodeInvalidType
+
+	// 报文相关错误 (1100-1199)
+	ErrCodeInvalidStartFlag ErrorCode = 1100 + iota
+	ErrCodeInvalidEndFlag
+	ErrCodePacketTooShort
+	ErrCodePacketTooLong
+	ErrCodeInvalidChecksum
+	ErrCodeInvalidControl
+	ErrCodeInvalidAddress
+	ErrCodeInvalidAFN
+
+	// 传输相关错误 (1200-1299)
+	ErrCodeConnectionFailed ErrorCode = 1200 + iota
+	ErrCodeTimeout
+	ErrCodeDataTooLong
+	ErrCodeReadFailed
+	ErrCodeWriteFailed
+	ErrCodeConnectionClosed
+
+	// 协议相关错误 (1300-1399)
+	ErrCodeUnsupportedVersion ErrorCode = 1300 + iota
+	ErrCodeInvalidPassword
+	ErrCodeInvalidTimeLabel
+	ErrCodeResponseTimeout
+	ErrCodeInvalidResponse
+)
+
+// Error 定义统一的错误类型
+type Error struct {
+	Code    ErrorCode // 错误码
+	Message string    // 错误信息
+	Cause   error     // 原始错误
+}
+
+// Error 实现 error 接口
+func (e *Error) Error() string {
+	if e.Cause != nil {
+		return fmt.Sprintf("[%d] %s: %v", e.Code, e.Message, e.Cause)
+	}
+	return fmt.Sprintf("[%d] %s", e.Code, e.Message)
+}
+
+// Unwrap 支持 errors.Unwrap
+func (e *Error) Unwrap() error {
+	return e.Cause
+}
+
+// NewError 创建新的错误
+func NewError(code ErrorCode, message string) error {
+	return &Error{
+		Code:    code,
+		Message: message,
+	}
+}
+
+// WrapError 包装已有错误
+func WrapError(code ErrorCode, message string, err error) error {
+	return &Error{
+		Code:    code,
+		Message: message,
+		Cause:   err,
+	}
+}
+
+// 预定义的错误实例
+var (
+	// 基础错误
+	ErrInvalidData   = NewError(ErrCodeInvalidData, "无效的数据")
+	ErrInvalidLength = NewError(ErrCodeInvalidLength, "无效的数据长度")
+	ErrInvalidFormat = NewError(ErrCodeInvalidFormat, "无效的数据格式")
+	ErrInvalidValue  = NewError(ErrCodeInvalidValue, "无效的值")
+	ErrInvalidType   = NewError(ErrCodeInvalidType, "无效的数据类型")
+
+	// 报文错误
+	ErrInvalidStartFlag = NewError(ErrCodeInvalidStartFlag, "无效的起始标识")
+	ErrInvalidEndFlag   = NewError(ErrCodeInvalidEndFlag, "无效的结束标识")
+	ErrPacketTooShort   = NewError(ErrCodePacketTooShort, "报文长度过短")
+	ErrPacketTooLong    = NewError(ErrCodePacketTooLong, "报文长度过长")
+	ErrInvalidChecksum  = NewError(ErrCodeInvalidChecksum, "无效的校验和")
+	ErrInvalidControl   = NewError(ErrCodeInvalidControl, "无效的控制域")
+	ErrInvalidAddress   = NewError(ErrCodeInvalidAddress, "无效的地址域")
+	ErrInvalidAFN       = NewError(ErrCodeInvalidAFN, "无效的功能码")
+
+	// 传输错误
+	ErrConnectionFailed = NewError(ErrCodeConnectionFailed, "连接失败")
+	ErrTimeout          = NewError(ErrCodeTimeout, "操作超时")
+	ErrDataTooLong      = NewError(ErrCodeDataTooLong, "数据过长")
+	ErrReadFailed       = NewError(ErrCodeReadFailed, "读取数据失败")
+	ErrWriteFailed      = NewError(ErrCodeWriteFailed, "写入数据失败")
+	ErrConnectionClosed = NewError(ErrCodeConnectionClosed, "连接已关闭")
+
+	// 协议错误
+	ErrUnsupportedVersion = NewError(ErrCodeUnsupportedVersion, "不支持的协议版本")
+	ErrInvalidPassword    = NewError(ErrCodeInvalidPassword, "无效的密码")
+	ErrInvalidTimeLabel   = NewError(ErrCodeInvalidTimeLabel, "无效的时间标签")
+	ErrResponseTimeout    = NewError(ErrCodeResponseTimeout, "响应超时")
+	ErrInvalidResponse    = NewError(ErrCodeInvalidResponse, "无效的响应")
+)
+
+// IsErrorCode 检查错误是否属于指定错误码
+func IsErrorCode(err error, code ErrorCode) bool {
+	var e *Error
+	if err == nil {
+		return false
+	}
+	if errors.As(err, &e) {
+		return e.Code == code
+	}
+	return false
+}
+
+// GetErrorCode 获取错误码
+func GetErrorCode(err error) ErrorCode {
+	var e *Error
+	if err == nil {
+		return 0
+	}
+	if errors.As(err, &e) {
+		return e.Code
+	}
+	return 0
+}
+
+// IsTimeout 判断是否为超时错误
+func IsTimeout(err error) bool {
+	return IsErrorCode(err, ErrCodeTimeout) ||
+		IsErrorCode(err, ErrCodeResponseTimeout)
+}
+
+// IsConnectionError 判断是否为连接相关错误
+func IsConnectionError(err error) bool {
+	return IsErrorCode(err, ErrCodeConnectionFailed) ||
+		IsErrorCode(err, ErrCodeConnectionClosed)
+}
+
+// IsDataError 判断是否为数据相关错误
+func IsDataError(err error) bool {
+	return IsErrorCode(err, ErrCodeInvalidData) ||
+		IsErrorCode(err, ErrCodeInvalidLength) ||
+		IsErrorCode(err, ErrCodeInvalidFormat) ||
+		IsErrorCode(err, ErrCodeInvalidValue) ||
+		IsErrorCode(err, ErrCodeInvalidType)
+}
+</document_content>
+</document>
+<document index="pkg\sl427\metrics\metrics.go">
+<source>pkg\sl427\metrics\metrics.go</source>
+<document_content>// pkg/sl427/metrics/metrics.go
+package metrics
+
+import (
+	"sync/atomic"
+	"time"
+)
+
+// Metrics 定义监控指标
+type Metrics struct {
+	PacketsReceived   uint64        // 接收的数据包数量
+	PacketsSent       uint64        // 发送的数据包数量
+	PacketsDropped    uint64        // 丢弃的数据包数量
+	LastReceiveTime   atomic.Value  // 最后接收时间
+	LastTransmitTime  atomic.Value  // 最后发送时间
+	ProcessingLatency time.Duration // 处理延迟
+}
+
+// NewMetrics 创建新的监控指标实例
+func NewMetrics() *Metrics {
+	m := &Metrics{}
+	m.LastReceiveTime.Store(time.Now())
+	m.LastTransmitTime.Store(time.Now())
+	return m
+}
+
+// RecordReceive 记录数据包接收
+func (m *Metrics) RecordReceive() {
+	atomic.AddUint64(&m.PacketsReceived, 1)
+	m.LastReceiveTime.Store(time.Now())
+}
+
+// RecordSend 记录数据包发送
+func (m *Metrics) RecordSend() {
+	atomic.AddUint64(&m.PacketsSent, 1)
+	m.LastTransmitTime.Store(time.Now())
+}
+
+// RecordDrop 记录数据包丢弃
+func (m *Metrics) RecordDrop() {
+	atomic.AddUint64(&m.PacketsDropped, 1)
+}
+
+// RecordLatency 记录处理延迟
+func (m *Metrics) RecordLatency(start time.Time) {
+	m.ProcessingLatency = time.Since(start)
+}
+</document_content>
+</document>
+<document index="pkg\sl427\packet\packet.go">
+<source>pkg\sl427\packet\packet.go</source>
+<document_content>// pkg/sl427/packet/packet.go
+package packet
+
+import (
+	"github.com/ThingsPanel/go-sl427/pkg/sl427/types"
+)
+
+// Packet 表示一个完整的数据包,关注语义而不是字节格式
+type Packet struct {
+	Head        types.Header    // 帧头
+	UserDataRaw []byte          // 数据域
+	UserData    *types.UserData // 用户数据区
+	CS          byte            // 校验码(CRC)
+	EndFlag     byte            // 帧结束标识
+	DataRaw     []byte          // 原始数据
+
+}
+
+// ParseUserData 解析用户数据区
+// codec已经处理了帧格式,这里只需要处理用户数据区
+func ParseUserData(frame *types.Frame) (*Packet, error) {
+	// 解析用户数据区
+	userData, err := types.NewUserData(frame.UserDataRaw)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Packet{
+		Head:        frame.Head,
+		UserDataRaw: frame.UserDataRaw,
+		UserData:    userData,
+		CS:          frame.CS,
+		EndFlag:     frame.EndFlag,
+		DataRaw:     frame.Raw(),
+	}, nil
+}
+</document_content>
+</document>
+<document index="pkg\sl427\packet\reader.go">
+<source>pkg\sl427\packet\reader.go</source>
+<document_content>// pkg/sl427/packet/reader.go
+package packet
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
+
+	"github.com/ThingsPanel/go-sl427/pkg/sl427/types"
+)
+
+// FrameReader 从io.Reader中读取SL427帧
+type Reader struct {
+	reader *bufio.Reader
+}
+
+// NewFrameReader 创建帧读取器
+func NewReader(r io.Reader) *Reader {
+	return &Reader{
+		reader: bufio.NewReader(r),
+	}
+}
+
+// ReadFrame 读取完整的SL427帧
+func (r *Reader) ReadFrame() ([]byte, error) {
+	var buf bytes.Buffer
+
+	// 1. 查找起始标识
+	startByte, err := r.reader.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("read start flag failed: %w", err)
+	}
+
+	// 寻找帧头
+	if startByte != types.StartFlag {
+		for {
+			b, err := r.reader.ReadByte()
+			if err != nil {
+				return nil, err
+			}
+			if b == types.StartFlag {
+				startByte = b
+				break
+			}
+		}
+	}
+	buf.WriteByte(startByte)
+
+	// 2. 读取长度字节
+	length, err := r.reader.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("read length failed: %w", err)
+	}
+	buf.WriteByte(length)
+
+	// 3. 读取第二个起始标识
+	startByte2, err := r.reader.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("read second start flag failed: %w", err)
+	}
+	buf.WriteByte(startByte2)
+
+	if startByte2 != types.StartFlag {
+		return nil, fmt.Errorf("invalid second start flag")
+	}
+
+	// 4. 读取用户数据区和校验码
+	remainingBytes := int(length) + 2 // 用户数据区 + CS + EndFlag
+	data := make([]byte, remainingBytes)
+	n, err := io.ReadFull(r.reader, data)
+	if err != nil {
+		return nil, fmt.Errorf("read remaining data failed: %w", err)
+	}
+	if n != remainingBytes {
+		return nil, fmt.Errorf("incomplete frame data")
+	}
+	buf.Write(data)
+
+	return buf.Bytes(), nil
+}
+</document_content>
+</document>
+<document index="pkg\sl427\transport\handler.go">
+<source>pkg\sl427\transport\handler.go</source>
+<document_content>// pkg/sl427/transport/handler.go
+package transport
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
+	"net"
+
+	"github.com/ThingsPanel/go-sl427/pkg/sl427"
+	"github.com/ThingsPanel/go-sl427/pkg/sl427/codec"
+	"github.com/ThingsPanel/go-sl427/pkg/sl427/packet"
+	"github.com/ThingsPanel/go-sl427/pkg/sl427/types"
+)
+
+// Handler 定义数据包处理器接口
+type Handler interface {
+	// Handle 处理连接
+	Handle() error
+
+	// SetLogger 设置日志接口
+	SetLogger(logger types.Logger)
+
+	// Close 关闭处理器
+	Close() error
+
+	// RemoteAddr 获取远程地址
+	RemoteAddr() net.Addr
+}
+
+// PacketHandler 包处理器接口
+type PacketHandler interface {
+	// HandlePacket 处理单个数据包
+	HandlePacket(*packet.Packet) error
+}
+
+// HandlerConfig 处理器配置
+type HandlerConfig struct {
+	MaxPacketSize int          // 最大包大小
+	ReadTimeout   int          // 读超时(秒)
+	WriteTimeout  int          // 写超时(秒)
+	Logger        types.Logger // 日志接口
+}
+
+// Option 处理器配置选项
+type Option func(*HandlerConfig)
+
+// WithMaxPacketSize 设置最大包大小
+func WithMaxPacketSize(size int) Option {
+	return func(c *HandlerConfig) {
+		c.MaxPacketSize = size
+	}
+}
+
+// WithLogger 设置日志接口
+func WithLogger(logger types.Logger) Option {
+	return func(c *HandlerConfig) {
+		c.Logger = logger
+	}
+}
+
+// WithTimeout 设置超时时间
+func WithTimeout(readTimeout, writeTimeout int) Option {
+	return func(c *HandlerConfig) {
+		c.ReadTimeout = readTimeout
+		c.WriteTimeout = writeTimeout
+	}
+}
+
+// DefaultConfig 默认配置
+var DefaultConfig = HandlerConfig{
+	MaxPacketSize: 1024,
+	ReadTimeout:   30,
+	WriteTimeout:  30,
+	Logger:        types.DefaultLogger,
+}
+
+// handlerImpl 处理器实现
+type handlerImpl struct {
+	conn          net.Conn
+	config        HandlerConfig
+	codec         *codec.PacketCodec
+	reader        *bufio.Reader
+	logger        types.Logger
+	packetHandler PacketHandler
+}
+
+// NewHandler 创建新的连接处理器
+func NewHandler(conn net.Conn, handler PacketHandler, opts ...Option) Handler {
+	config := DefaultConfig
+
+	// 应用配置选项
+	for _, opt := range opts {
+		opt(&config)
+	}
+
+	return &handlerImpl{
+		conn:          conn,
+		config:        config,
+		codec:         codec.NewPacketCodec(),
+		reader:        bufio.NewReader(conn),
+		logger:        config.Logger,
+		packetHandler: handler,
+	}
+}
+
+// Handle 实现Handler接口：处理连接
+func (h *handlerImpl) Handle() error {
+	defer h.Close()
+
+	h.logger.Printf("新连接建立: %s", h.conn.RemoteAddr())
+
+	for {
+		// 读取并处理数据包
+		p, err := h.readPacket()
+		if err != nil {
+			if err != io.EOF {
+				h.logger.Printf("读取数据失败 [%s]: %v", h.conn.RemoteAddr(), err)
+				if sl427.IsErrorCode(err, sl427.ErrCodeInvalidData) {
+					continue // 尝试重新同步
+				}
+				return err
+			}
+			return nil // 连接正常关闭
+		}
+
+		// 处理数据包
+		if err := h.packetHandler.HandlePacket(p); err != nil {
+			h.logger.Printf("处理数据包失败 [%s]: %v", h.conn.RemoteAddr(), err)
+			continue
+		}
+	}
+}
+
+// pkg/sl427/server/handler.go
+func (h *handlerImpl) readPacket() (*packet.Packet, error) {
+	var buf bytes.Buffer
+
+	// 1. 查找起始标识
+	startByte, err := h.reader.ReadByte()
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取起始字节失败", err)
+	}
+	buf.WriteByte(startByte)
+
+	// 确保是起始字节
+	if startByte != types.StartFlag {
+		return nil, sl427.WrapError(
+			sl427.ErrCodeInvalidData,
+			fmt.Sprintf("无效的起始标识: 预期值=%#X, 实际读取值=%#X (十进制=%d)",
+				types.StartFlag,
+				startByte,
+				startByte,
+			),
+			nil,
+		)
+	}
+
+	// 2. 读取长度字节
+	length, err := h.reader.ReadByte()
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取长度字节失败", err)
+	}
+	buf.WriteByte(length)
+
+	// 3. 读取第二个起始标识
+	startByte2, err := h.reader.ReadByte()
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取第二个起始标识失败", err)
+	}
+	buf.WriteByte(startByte2)
+
+	if startByte2 != types.StartFlag {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "无效的第二个起始标识", nil)
+	}
+
+	// 4. 计算需要读取的剩余字节数
+	// 总长度 = 用户数据区长度 + 帧头(3) + CS(1) + 结束符(1)
+	remainingBytes := int(length) + 2 // +2是CS和结束符
+
+	// 5. 读取剩余数据
+	data := make([]byte, remainingBytes)
+	n, err := io.ReadFull(h.reader, data)
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeConnectionFailed, "读取剩余数据失败", err)
+	}
+	if n != remainingBytes {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidLength,
+			fmt.Sprintf("数据长度不匹配,期望:%d,实际:%d", remainingBytes, n), nil)
+	}
+	buf.Write(data)
+
+	// 6. 使用codec解码完整的帧
+	frame, err := codec.NewPacketCodec().DecodePacket(buf.Bytes())
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "解码失败", err)
+	}
+
+	// 7. 解析用户数据
+	p, err := packet.ParseUserData(frame)
+	if err != nil {
+		return nil, sl427.WrapError(sl427.ErrCodeInvalidData, "解析失败", err)
+	}
+
+	// // 8. 更新统计信息
+	// h.metrics.PacketsReceived++
+	// h.metrics.LastReceiveTime = time.Now()
+
+	h.logger.Printf("成功读取数据包: 长度=%d bytes", buf.Len())
+	return p, nil
+}
+
+// SetLogger 实现Handler接口：设置日志接口
+func (h *handlerImpl) SetLogger(logger types.Logger) {
+	if logger != nil {
+		h.logger = logger
+	}
+}
+
+// Close 实现Handler接口：关闭处理器
+func (h *handlerImpl) Close() error {
+	return h.conn.Close()
+}
+
+// RemoteAddr 实现Handler接口：获取远程地址
+func (h *handlerImpl) RemoteAddr() net.Addr {
+	return h.conn.RemoteAddr()
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\address.go">
+<source>pkg\sl427\types\address.go</source>
+<document_content>// pkg/sl427/types/address.go
+
+package types
+
+import (
+	"encoding/binary"
+	"fmt"
+)
+
+// 地址域格式类型
+const (
+	AddrFormatType1 = 0x01 // 方式1:行政区划码+站点地址
+	AddrFormatType2 = 0x00 // 方式2:特征码+站点编码
+)
+
+// 地址域长度定义
+const (
+	AdminCodeLen   = 3 // 行政区划码长度(方式1)
+	StationAddrLen = 2 // 站点地址长度(方式1)
+	FeatureCode    = 0 // 特征码(方式2)
+)
+
+// 站点地址范围(方式1)
+const (
+	MinStationAddr = 1     // 监测站最小地址
+	MaxStationAddr = 60000 // 监测站最大地址
+	MinRelayAddr   = 60001 // 中继站最小地址
+	MaxRelayAddr   = 65534 // 中继站最大地址
+	BroadcastAddr  = 65535 // 广播地址
+	InvalidAddr    = 0     // 无效地址
+)
+
+// 地址域掩码(方式2)
+// 每个字节被分成高4位和低4位来存储两个16进制数字。掩码(Mask)和位移(Shift)用于从字节中提取这些数字。
+const (
+	StationCodeMask  = 0x0F // 站点编码掩码
+	StationCodeShift = 4    // 站点编码位移量
+)
+
+// Address 定义地址域接口
+type Address interface {
+	// Bytes 返回5字节的地址域二进制表示
+	Bytes() []byte
+	// Format 返回格式类型(1或2)
+	Format() int
+	// String 返回可读的字符串表示
+	String() string
+	// Validate 验证地址有效性
+	Validate() error
+}
+
+// AddressV1 方式1的地址实现(行政区划码 + 站点地址)
+type AddressV1 struct {
+	AdminCode []byte // 3字节BCD格式的行政区划码
+	StationID uint16 // 2字节二进制格式的站点地址
+}
+
+// Bytes 实现Address接口
+func (a *AddressV1) Bytes() []byte {
+	buf := make([]byte, AddressLen)
+	// 复制3字节行政区划码
+	copy(buf[0:3], a.AdminCode)
+	// 写入2字节站点地址
+	binary.BigEndian.PutUint16(buf[3:], a.StationID)
+	return buf
+}
+
+func (a *AddressV1) Format() int {
+	return 1
+}
+
+func (a *AddressV1) String() string {
+	return fmt.Sprintf("V1{AdminCode:%X,StationID:%d}", a.AdminCode, a.StationID)
+}
+
+func (a *AddressV1) Validate() error {
+	// 1. 检查行政区划码长度
+	if len(a.AdminCode) != 3 {
+		return fmt.Errorf("行政区划码长度错误: %d", len(a.AdminCode))
+	}
+
+	// 2. 检查BCD码有效性
+	for _, b := range a.AdminCode {
+		if !BCD.IsValid(b) {
+			return fmt.Errorf("无效的BCD码: %X", b)
+		}
+	}
+
+	// 3. 检查站点地址范围
+	switch {
+	case a.StationID == InvalidAddr:
+		return fmt.Errorf("无效的站点地址: 0")
+	case a.StationID <= MaxStationAddr:
+		// 监测站地址范围: 1-60000
+		return nil
+	case a.StationID <= MaxRelayAddr:
+		// 中继站地址范围: 60001-65534
+		return nil
+	case a.StationID == BroadcastAddr:
+		// 广播地址: 65535
+		return nil
+	default:
+		return fmt.Errorf("站点地址超出范围: %d", a.StationID)
+	}
+}
+
+// NewAddressV1 创建方式1的地址
+func NewAddressV1(adminCode []byte, stationID uint16) (*AddressV1, error) {
+	addr := &AddressV1{
+		AdminCode: make([]byte, 3),
+		StationID: stationID,
+	}
+	copy(addr.AdminCode, adminCode)
+
+	if err := addr.Validate(); err != nil {
+		return nil, err
+	}
+	return addr, nil
+}
+
+// AddressV2 方式2的地址实现(特征码 + 站点编码)
+type AddressV2 struct {
+	StationCode []byte // 4字节HEX格式的站点编码
+}
+
+// Bytes 实现Address接口
+func (a *AddressV2) Bytes() []byte {
+	buf := make([]byte, AddressLen)
+	// 第1字节为特征码00H
+	buf[0] = FeatureCode
+	// 复制4字节站点编码
+	copy(buf[1:], a.StationCode)
+	return buf
+}
+
+func (a *AddressV2) Format() int {
+	return 2
+}
+
+func (a *AddressV2) String() string {
+	return fmt.Sprintf("V2{StationCode:%X}", a.StationCode)
+}
+
+func (a *AddressV2) Validate() error {
+	// 1. 检查站点编码长度
+	if len(a.StationCode) != 4 {
+		return fmt.Errorf("站点编码长度错误: %d", len(a.StationCode))
+	}
+
+	// 2. 检查编码格式(每个半字节是否都有效)
+	for i, b := range a.StationCode {
+		high := b >> 4
+		low := b & 0x0F
+		if high > 0x0F || low > 0x0F {
+			return fmt.Errorf("无效的HEX编码: byte[%d]=%X", i, b)
+		}
+	}
+
+	return nil
+}
+
+// NewAddressV2 创建方式2的地址
+func NewAddressV2(stationCode []byte) (*AddressV2, error) {
+	addr := &AddressV2{
+		StationCode: make([]byte, 4),
+	}
+	copy(addr.StationCode, stationCode)
+
+	if err := addr.Validate(); err != nil {
+		return nil, err
+	}
+	return addr, nil
+}
+
+// ParseAddress 从字节流解析地址
+func ParseAddress(data []byte) (Address, error) {
+	if len(data) != AddressLen {
+		return nil, fmt.Errorf("地址长度错误: %d", len(data))
+	}
+
+	// 根据第一个字节判断格式
+	if data[0] == FeatureCode {
+		// 方式2: 特征码为00H
+		return NewAddressV2(data[1:])
+	}
+
+	// 方式1: 前3字节为行政区划码
+	return NewAddressV1(
+		data[0:3],
+		binary.BigEndian.Uint16(data[3:]),
+	)
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\afn.go">
+<source>pkg\sl427\types\afn.go</source>
+<document_content>// pkg/sl427/types/afn.go
+
+package types
+
+import "fmt"
+
+// AFN 功能码类型
+type AFN byte
+
+// 功能码定义 - 自报相关
+const (
+	AFNUpload    AFN = 0xC0 // 自报实时数据
+	AFNAlarm     AFN = 0x81 // 自报告警数据
+	AFNManualSet AFN = 0x82 // 人工置数
+	AFNImageData AFN = 0x83 // 自报图片数据
+	AFNVoltage   AFN = 0x84 // 自报电压数据
+)
+
+// IsValid 检查功能码是否有效
+func (a AFN) IsValid() bool {
+	switch a {
+	case AFNUpload, AFNAlarm, AFNManualSet, AFNImageData, AFNVoltage:
+		return true
+	default:
+		return false
+	}
+}
+
+// String 返回功能码的字符串表示
+func (a AFN) String() string {
+	switch a {
+	case AFNUpload:
+		return "自报实时数据(0xC0)"
+	case AFNAlarm:
+		return "自报告警数据(0x81)"
+	case AFNManualSet:
+		return "人工置数(0x82)"
+	case AFNImageData:
+		return "自报图片数据(0x83)"
+	case AFNVoltage:
+		return "自报电压数据(0x84)"
+	default:
+		return fmt.Sprintf("未知功能码(0x%02X)", byte(a))
+	}
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\bcd.go">
+<source>pkg\sl427\types\bcd.go</source>
+<document_content>// pkg/sl427/types/bcd.go
+
+package types
+
+// BCDCodec BCD编解码器
+type BCDCodec struct{}
+
+// BCD 全局BCD编解码器实例
+var BCD = BCDCodec{}
+
+// ToBCD 将数字转换为BCD编码
+func (c BCDCodec) ToBCD(n byte) byte {
+	// 十位和个位分别转BCD
+	return (n/10)<<4 | (n % 10)
+}
+
+// FromBCD 将BCD编码转换为数字
+func (c BCDCodec) FromBCD(b byte) byte {
+	// 分别获取十位和个位,然后计算实际值
+	return ((b>>4)&0x0F)*10 + (b & 0x0F)
+}
+
+// IsValid 检查是否有效的BCD码
+func (c BCDCodec) IsValid(b byte) bool {
+	// 检查高4位和低4位是否都在0-9范围内
+	high := (b >> 4) & 0x0F
+	low := b & 0x0F
+	return high <= 9 && low <= 9
+}
+
+// Encode 将byte数组转换为BCD编码
+func (c BCDCodec) Encode(data []byte) []byte {
+	// 计算需要的BCD字节数
+	bcdLen := (len(data) + 1) / 2
+	bcd := make([]byte, bcdLen)
+
+	for i := 0; i < len(data); i += 2 {
+		// 高半字节
+		high := (data[i] - '0') << 4
+		if i+1 < len(data) {
+			// 低半字节
+			low := data[i+1] - '0'
+			bcd[i/2] = high | low
+		} else {
+			// 最后一个字节填0
+			bcd[i/2] = high
+		}
+	}
+	return bcd
+}
+
+// Decode 将BCD编码转换回byte数组
+func (c BCDCodec) Decode(bcd []byte) []byte {
+	data := make([]byte, len(bcd)*2)
+
+	for i := 0; i < len(bcd); i++ {
+		// 解析高4位和低4位
+		high := (bcd[i] >> 4) & 0x0F
+		low := bcd[i] & 0x0F
+
+		// 转换为ASCII字符
+		data[i*2] = high + '0'
+		data[i*2+1] = low + '0'
+	}
+	return data
+}
+
+// EncodeInt 将整数编码为BCD
+func (c BCDCodec) EncodeInt(n uint32, bytes int) []byte {
+	bcd := make([]byte, bytes)
+	for i := bytes - 1; i >= 0; i-- {
+		bcd[i] = c.ToBCD(byte(n % 100))
+		n /= 100
+	}
+	return bcd
+}
+
+// DecodeInt 将BCD解码为整数
+func (c BCDCodec) DecodeInt(bcd []byte) uint32 {
+	var n uint32
+	for _, b := range bcd {
+		n = n*100 + uint32(c.FromBCD(b))
+	}
+	return n
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\constants.go">
+<source>pkg\sl427\types\constants.go</source>
+<document_content>// pkg/sl427/types/constants.go
+package types
+
+// 数据类型定义
+const (
+	TypeInt8   = 0x01 // 8位整数
+	TypeInt16  = 0x02 // 16位整数
+	TypeInt32  = 0x03 // 32位整数
+	TypeString = 0x04 // 字符串
+	TypeTime   = 0x05 // 时间类型
+)
+</document_content>
+</document>
+<document index="pkg\sl427\types\control.go">
+<source>pkg\sl427\types\control.go</source>
+<document_content>// pkg/sl427/types/control.go
+
+package types
+
+import "fmt"
+
+// 控制域定义
+const (
+	DirBit   = 0x80 // 传输方向位(D7) 1:上行（由终端机发出） 0:下行（由中心站发出）
+	DivBit   = 0x40 // 拆分标志位(D6) 1:拆分 0:不拆分
+	FcbMask  = 0x30 // 帧计数位(D5~D4) 00:帧计数0 01:帧计数1 10:帧计数2 11:帧计数3
+	CodeMask = 0x0F // 命令与类型码掩码(D3~D0)
+)
+
+// 上行帧命令与类型码(DIR=1, D3~D0)，这里只定义了上行的命令与类型码
+const (
+	// 帧类型：确认
+	CmdUpConfirm = 0x00 // 认可
+	// 帧类型：自报帧
+	DataTypeRain       = 0x01 // 雨量参数
+	DataTypeWaterLevel = 0x02 // 水位参数
+	DataTypeFlow       = 0x03 // 流量(水量)参数
+	DataTypeSpeed      = 0x04 // 流速参数
+	DataTypeGate       = 0x05 // 闸位参数
+	DataTypePower      = 0x06 // 功率参数
+	DataTypeWeather    = 0x07 // 气象参数
+	DataTypeElectric   = 0x08 // 电量参数
+	DataTypeTemp       = 0x09 // 水温参数
+	DataTypeQuality    = 0x0A // 水质参数
+	DataTypeSoil       = 0x0B // 土壤含水率参数
+	DataTypeEvapor     = 0x0C // 蒸发量参数
+	DataTypeAlarm      = 0x0D // 报警状态参数
+	DataTypeRainStat   = 0x0E // 统计雨量
+	DataTypePressure   = 0x0F // 水压参数
+)
+
+// Control 控制域结构体
+type Control struct {
+	value byte  // 第一个字节
+	divs  *byte // 拆分帧计数(可选的第二个字节)
+}
+
+// NewControl 创建新的控制域
+func NewControl(value byte) *Control {
+	return &Control{value: value}
+}
+
+// SetDIV 设置拆分标志和计数
+func (c *Control) SetDIV(count byte) {
+	c.value |= 0x40 // 设置D6位
+	c.divs = &count
+}
+
+// IsDIV 判断是否为拆分帧
+func (c *Control) IsDIV() bool {
+	return (c.value & 0x40) != 0
+}
+
+// DIR 获取传输方向(true表示上行,false表示下行)
+func (c *Control) DIR() bool {
+	return (c.value & 0x80) != 0
+}
+
+// SetDIR 设置传输方向
+func (c *Control) SetDIR(up bool) {
+	if up {
+		c.value |= 0x80 // 设置D7位为1(上行)
+	} else {
+		c.value &^= 0x80 // 清除D7位(下行)
+	}
+}
+
+// FCB 获取帧计数位(D5~D4)
+func (c *Control) FCB() byte {
+	return (c.value >> 4) & 0x03
+}
+
+// SetFCB 设置帧计数位
+func (c *Control) SetFCB(fcb byte) {
+	c.value = (c.value & 0xCF) | ((fcb & 0x03) << 4)
+}
+
+// Code 获取命令与类型码(D3~D0)
+func (c *Control) Code() byte {
+	return c.value & 0x0F
+}
+
+// SetCode 设置命令与类型码
+func (c *Control) SetCode(code byte) {
+	c.value = (c.value & 0xF0) | (code & 0x0F)
+}
+
+// Bytes 返回控制域的字节表示
+func (c *Control) Bytes() []byte {
+	if c.divs != nil {
+		return []byte{c.value, *c.divs}
+	}
+	return []byte{c.value}
+}
+
+// Length 返回控制域长度(1或2字节)
+func (c *Control) Length() int {
+	if c.divs != nil {
+		return 2
+	}
+	return 1
+}
+
+// IsUp 判断是否为上行
+func (c *Control) IsUp() bool {
+	return (c.value & DirBit) != 0
+}
+
+// GetType 获取数据类型
+func (c *Control) GetType() byte {
+	return c.value & CodeMask
+}
+
+// String 友好的字符串表示
+func (c *Control) String() string {
+	dir := "下行"
+	if c.IsUp() {
+		dir = "上行"
+	}
+	return fmt.Sprintf("%s类型:%d", dir, c.GetType())
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\frame.go">
+<source>pkg\sl427\types\frame.go</source>
+<document_content>// pkg/sl427/types/frame.go
+package types
+
+// 基本帧格式常量
+const (
+	// 帧标识符
+	StartFlag byte = 0x68 // 帧起始标识(固定值68H)
+	EndFlag   byte = 0x16 // 帧结束标识(固定值16H)
+
+	// 长度限制
+	MinFrameLen = 7   // 最小帧长度(帧头3 + 最小用户数据区1 + CS 1 + 结束符1)
+	MaxFrameLen = 255 // 用户数据区最大长度(规约定义)
+
+	// 固定长度字段
+	AddressLen   = 5 // 地址域固定5字节
+	TimeLabelLen = 7 // 时间标签固定7字节
+)
+
+// Frame 完整的帧结构定义
+// 规约7.2.1节 帧格式框架表3
+type Frame struct {
+	Head        Header // 帧头
+	UserDataRaw []byte // 用户数据区原始字节
+	CS          byte   // 校验码(CRC)
+	EndFlag     byte   // 帧结束标识
+}
+
+// FrameHeader 帧头定义(3字节)
+// 规约7.2.2节 帧起始符和长度定义
+type Header struct {
+	StartFlag1 byte // 帧起始标识1(68H)
+	Length     byte // 用户数据区长度L(1~255)
+	StartFlag2 byte // 帧起始标识2(68H)
+}
+
+// 计算frame的长度
+func (f *Frame) Len() int {
+	return len(f.UserDataRaw) + 7
+}
+
+// 返回原始数据
+func (f *Frame) Raw() []byte {
+	return append(append([]byte{f.Head.StartFlag1, f.Head.Length, f.Head.StartFlag2}, f.UserDataRaw...), f.CS, f.EndFlag)
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\logger.go">
+<source>pkg\sl427\types\logger.go</source>
+<document_content>// pkg/sl427/types/logger.go
+package types
+
+// Logger 定义最小日志接口
+type Logger interface {
+	Printf(format string, v ...interface{})
+}
+
+// 默认的空日志实现
+type noopLogger struct{}
+
+func (l noopLogger) Printf(format string, v ...interface{}) {}
+
+// DefaultLogger 默认使用空日志实现
+var DefaultLogger Logger = noopLogger{}
+
+// SetLogger 允许用户设置自定义日志实现
+func SetLogger(l Logger) {
+	if l != nil {
+		DefaultLogger = l
+	}
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\timestamp.go">
+<source>pkg\sl427\types\timestamp.go</source>
+<document_content>// pkg/sl427/types/timestamp.go
+package types
+
+import (
+	"fmt"
+	"time"
+)
+
+const TimestampLen = 7 // 6字节BCD时间 + 1字节超时
+
+// Timestamp 时间标签结构(7字节)
+type TimeLabel struct {
+	Second  byte // 秒(BCD码)
+	Minute  byte // 分(BCD码)
+	Hour    byte // 时(BCD码)
+	Day     byte // 日(BCD码)
+	Month   byte // 月(BCD码)
+	Year    byte // 年(BCD码,0-99)
+	Timeout byte // 超时时间(分钟,BIN码)
+}
+
+// NewTimestamp 创建新的时间标签
+func NewTimestamp(t time.Time) *TimeLabel {
+	return &TimeLabel{
+		Second:  BCD.ToBCD(byte(t.Second())),
+		Minute:  BCD.ToBCD(byte(t.Minute())),
+		Hour:    BCD.ToBCD(byte(t.Hour())),
+		Day:     BCD.ToBCD(byte(t.Day())),
+		Month:   BCD.ToBCD(byte(t.Month())),
+		Year:    BCD.ToBCD(byte(t.Year() % 100)), // 只取年份后两位
+		Timeout: 0,                               // 默认超时为0
+	}
+}
+
+// Bytes 返回时间标签的字节表示
+func (t *TimeLabel) Bytes() []byte {
+	return []byte{
+		t.Second,
+		t.Minute,
+		t.Hour,
+		t.Day,
+		t.Month,
+		t.Year,
+		t.Timeout,
+	}
+}
+
+// ParseTimestamp 从字节数组解析时间标签
+func ParseTimestamp(data []byte) (*TimeLabel, error) {
+	if len(data) != TimestampLen {
+		return nil, fmt.Errorf("invalid timestamp length: %d", len(data))
+	}
+
+	return &TimeLabel{
+		Second:  data[0],
+		Minute:  data[1],
+		Hour:    data[2],
+		Day:     data[3],
+		Month:   data[4],
+		Year:    data[5],
+		Timeout: data[6],
+	}, nil
+}
+
+func (t *TimeLabel) Seconds() int64 {
+	// 将BCD码转换为实际数值
+	second := BCD.FromBCD(t.Second)
+	minute := BCD.FromBCD(t.Minute)
+	hour := BCD.FromBCD(t.Hour)
+	day := BCD.FromBCD(t.Day)
+	month := BCD.FromBCD(t.Month)
+	year := BCD.FromBCD(t.Year)
+
+	// 构建完整时间
+	// 注意：年份是两位数，需要转换为四位数
+	// 这里假设年份范围是2000-2099
+	fullYear := 2000 + int(year)
+
+	// 使用time.Date构建时间对象
+	timestamp := time.Date(
+		fullYear,
+		time.Month(month),
+		int(day),
+		int(hour),
+		int(minute),
+		int(second),
+		0, // 纳秒部分为0
+		time.Local,
+	)
+
+	return timestamp.Unix()
+}
+
+// 添加一个检查时间是否为零值的方法
+func (t *TimeLabel) IsZero() bool {
+	return t.Second == 0 && t.Minute == 0 && t.Hour == 0 &&
+		t.Day == 0 && t.Month == 0 && t.Year == 0
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\upload.go">
+<source>pkg\sl427\types\upload.go</source>
+<document_content>// pkg/sl427/types/measurement.go
+package types
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// 注册函数
+var parseUploadFuncMap = map[byte]func(byte, []byte) (json.RawMessage, error){
+	DataTypeRain:       parseRain,
+	DataTypeWaterLevel: parseWaterLevel,
+}
+
+// DeviceMode 确认帧的数据域,终端机工作模式
+const (
+	ModeCompatible = 0x00 // 兼容工作状态
+	ModeUpload     = 0x01 // 自报工作状态
+	ModeQuery      = 0x02 // 查询/应答工作状态
+	ModeDebug      = 0x03 // 调试/维修状态
+)
+
+// DeviceStatus 设备状态(4字节)(AFN=81H)
+type DeviceStatus struct {
+	Alarm uint16 // 报警状态(2字节)
+	State uint16 // 终端机状态(2字节)
+}
+
+// UploadFrame 自报数据帧
+type UploadFrame struct {
+	RawData []byte          // 原始数据
+	Items   json.RawMessage // 数据项
+	Status  DeviceStatus    // 状态信息
+}
+
+// ParseUploadData 解析自报数据的数据域D
+// dataType 控制域C中的命令与类型码
+// dataField 数据域D的原始字节流
+// dataMap 数据项映射表:[命令与类型码]json的key
+func ParseUploadData(dataType byte, dataField []byte) (*UploadFrame, error) {
+	// 获取解析函数
+	parseFunc, ok := parseUploadFuncMap[dataType]
+	if !ok {
+		return nil, fmt.Errorf("未找到解析函数，不支持的类型码: %d", dataType)
+	}
+
+	// 解析数据
+	items, err := parseFunc(dataType, dataField)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析状态信息
+	status := DeviceStatus{
+		Alarm: uint16(dataField[0])<<8 | uint16(dataField[1]),
+		State: uint16(dataField[2])<<8 | uint16(dataField[3]),
+	}
+
+	// 创建自报数据帧
+	return &UploadFrame{
+		RawData: dataField,
+		Items:   items,
+		Status:  status,
+	}, nil
+}
+
+// ParseRain 解析雨量数据(3字节BCD码)
+func parseRain(dataType byte, data []byte) (json.RawMessage, error) {
+	if len(data) != 3 {
+		return nil, fmt.Errorf("invalid rain data length: %d", len(data))
+	}
+
+	// 解析3字节BCD码为雨量值
+	value := BCD.DecodeInt(data)
+
+	// 转换为json格式
+	return json.Marshal(map[string]interface{}{
+		"YL": float64(value) / 10.0, // 保留一位小数
+	})
+}
+
+// ParseWaterLevel 解析水位数据(每个水位4字节BCD码)
+func parseWaterLevel(dataType byte, data []byte) (json.RawMessage, error) {
+	if len(data) < 4 || len(data)%4 != 0 {
+		return nil, fmt.Errorf("invalid water level data length: %d", len(data))
+	}
+
+	// 构造结果map
+	result := make(map[string]interface{})
+
+	// 计算水位个数
+	count := len(data) / 4
+
+	// 解析每个水位
+	for i := 0; i < count; i++ {
+		// 获取当前水位数据
+		offset := i * 4
+		levelData := data[offset : offset+4]
+
+		// 解析符号位
+		signByte := levelData[3] >> 4
+		negative := signByte == 0x0F
+
+		// 解析水位值
+		value := float64(BCD.FromBCD(levelData[0]&0x0F))*0.001 + // 毫米位
+			float64(BCD.FromBCD(levelData[0]>>4))*0.01 + // 厘米位
+			float64(BCD.FromBCD(levelData[1]&0x0F))*0.1 + // 分米位
+			float64(BCD.FromBCD(levelData[1]>>4)) + // 米个位
+			float64(BCD.FromBCD(levelData[2]&0x0F))*10 + // 米十位
+			float64(BCD.FromBCD(levelData[2]>>4))*100 + // 米百位
+			float64(BCD.FromBCD(levelData[3]&0x0F))*1000 // 米千位
+
+		if negative {
+			value = -value
+		}
+
+		// 生成key(第一个用SW,后续用SW2,SW3...)
+		key := "SW"
+		if i > 0 {
+			key = fmt.Sprintf("SW%d", i+1)
+		}
+
+		result[key] = value
+	}
+
+	return json.Marshal(result)
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\user_data.go">
+<source>pkg\sl427\types\user_data.go</source>
+<document_content>// pkg/sl427/types/user_data.go
+package types
+
+import (
+	"fmt"
+	"strings"
+)
+
+// UserData 用户数据区定义(规约7.2.3节)
+type UserData struct {
+	Control   Control    // 控制域C(1或2字节)
+	Address   Address    // 地址域A(5字节)
+	AFN       AFN        // 功能码(1字节)
+	UserAFN   *byte      // 用户功能码(1字节,可选)
+	DataField []byte     // 数据域D的原始字节流
+	PW        *byte      // 密码PW(2字节,可选)
+	Tp        *TimeLabel // 时间标签Tp(7字节,可选)
+}
+
+// NewUserData 从字节流解析用户数据区
+func NewUserData(data []byte) (*UserData, error) {
+	if len(data) < 7 { // 最小长度:控制域(1)+地址域(5)+AFN(1)
+		return nil, fmt.Errorf("数据长度不足: %d", len(data))
+	}
+
+	userData := &UserData{}
+	offset := 0
+
+	// 1. 解析控制域
+	ctrl := NewControl(data[offset])
+	if ctrl.IsDIV() {
+		if len(data) < 8 { // 需要额外1字节
+			return nil, fmt.Errorf("拆分帧数据长度不足")
+		}
+		ctrl.SetDIV(data[offset+1])
+		offset += 2
+	} else {
+		offset++
+	}
+	userData.Control = *ctrl
+
+	// 2. 解析地址域
+	addr, err := ParseAddress(data[offset : offset+5])
+	if err != nil {
+		return nil, fmt.Errorf("解析地址域失败: %v", err)
+	}
+	userData.Address = addr
+	offset += 5
+
+	// 3. 解析功能码
+	userData.AFN = AFN(data[offset])
+	offset++
+
+	// 4. 处理用户自定义功能码
+	if userData.AFN == 0xFF {
+		if offset >= len(data) {
+			return nil, fmt.Errorf("解析用户功能码失败: 数据不足")
+		}
+		userAFN := data[offset]
+		userData.UserAFN = &userAFN
+		offset++
+	}
+
+	restData := data[offset:]
+
+	// 5. 尝试解析时间标签(如果有)
+	if len(restData) >= 7 {
+		timeData := restData[len(restData)-7:]
+		// 验证是否为有效的时间标签
+		if isValidTimeLabel(timeData) {
+			timestamp, err := ParseTimestamp(timeData)
+			if err == nil {
+				userData.Tp = timestamp
+				restData = restData[:len(restData)-7]
+			}
+		}
+	}
+
+	// 6. 处理密码(如果存在)
+	if !ctrl.DIR() && len(restData) >= 2 { // 下行报文可能包含密码
+		pw := restData[len(restData)-2]
+		userData.PW = &pw
+		restData = restData[:len(restData)-2]
+	}
+
+	// 7. 保存剩余数据为数据域
+	userData.DataField = restData
+
+	return userData, nil
+}
+
+// isValidTimeLabel 简单验证是否为有效的时间标签
+func isValidTimeLabel(data []byte) bool {
+	if len(data) != 7 {
+		return false
+	}
+	// 验证时分秒等是否在合理范围
+	// 秒
+	if !BCD.IsValid(data[0]) || BCD.FromBCD(data[0]) > 59 {
+		return false
+	}
+	// 分
+	if !BCD.IsValid(data[1]) || BCD.FromBCD(data[1]) > 59 {
+		return false
+	}
+	// 时
+	if !BCD.IsValid(data[2]) || BCD.FromBCD(data[2]) > 23 {
+		return false
+	}
+	// 日
+	if !BCD.IsValid(data[3]) || BCD.FromBCD(data[3]) > 31 || BCD.FromBCD(data[3]) == 0 {
+		return false
+	}
+	// 月
+	if !BCD.IsValid(data[4]) || BCD.FromBCD(data[4]) > 12 || BCD.FromBCD(data[4]) == 0 {
+		return false
+	}
+	// 年和延时值不做特殊验证
+	return true
+}
+
+// Bytes 将用户数据区编码为字节流
+func (u *UserData) Bytes() []byte {
+	// 计算总长度
+	length := u.Control.Length() + 5 + 1 // 控制域 + 地址域 + AFN
+	if u.UserAFN != nil {
+		length++
+	}
+	if u.PW != nil {
+		length += 2
+	}
+	length += len(u.DataField)
+	if u.Tp != nil {
+		length += 7
+	}
+
+	// 分配缓冲区
+	buf := make([]byte, 0, length)
+
+	// 1. 写入控制域
+	buf = append(buf, u.Control.Bytes()...)
+
+	// 2. 写入地址域
+	buf = append(buf, u.Address.Bytes()...)
+
+	// 3. 写入功能码
+	buf = append(buf, byte(u.AFN))
+
+	// 4. 写入用户功能码(如果存在)
+	if u.UserAFN != nil {
+		buf = append(buf, *u.UserAFN)
+	}
+
+	// 5. 写入数据域
+	buf = append(buf, u.DataField...)
+
+	// 6. 写入密码(如果存在)
+	if u.PW != nil {
+		buf = append(buf, *u.PW)
+	}
+
+	// 7. 写入时间标签(如果存在)
+	if u.Tp != nil {
+		buf = append(buf, u.Tp.Bytes()...)
+	}
+
+	return buf
+}
+
+// Validate 验证用户数据区的有效性
+func (u *UserData) Validate() error {
+	// 1. 验证地址
+	if err := u.Address.Validate(); err != nil {
+		return fmt.Errorf("无效的地址域: %v", err)
+	}
+
+	// 2. 验证功能码
+	if !u.AFN.IsValid() {
+		return fmt.Errorf("无效的功能码: %02X", u.AFN)
+	}
+
+	// 3. 验证用户功能码
+	if u.AFN == 0xFF && u.UserAFN == nil {
+		return fmt.Errorf("缺少用户功能码")
+	}
+
+	// 4. 验证密码(下行报文)
+	if !u.Control.DIR() && u.PW == nil {
+		return fmt.Errorf("下行报文缺少密码")
+	}
+
+	return nil
+}
+
+// String 返回用户数据区的可读字符串表示
+func (u *UserData) String() string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Control: %s\n", u.Control.String()))
+	sb.WriteString(fmt.Sprintf("Address: %s\n", u.Address.String()))
+	sb.WriteString(fmt.Sprintf("AFN: %s\n", u.AFN.String()))
+	if u.UserAFN != nil {
+		sb.WriteString(fmt.Sprintf("UserAFN: %02X\n", *u.UserAFN))
+	}
+	sb.WriteString(fmt.Sprintf("DataField: %X\n", u.DataField))
+	if u.PW != nil {
+		sb.WriteString(fmt.Sprintf("PW: %02X\n", *u.PW))
+	}
+	sb.WriteString(fmt.Sprintf("TimeLabel: %+v", u.Tp))
+	return sb.String()
+}
+</document_content>
+</document>
+<document index="pkg\sl427\types\说明.md">
+<source>pkg\sl427\types\说明.md</source>
+<document_content># 包说明
+
+pkg/sl427/types/
+├── constants.go     # 基础常量定义(起始符、结束符等)
+├── control.go      # 控制域相关定义和处理
+├── address.go      # 地址域相关定义和处理
+├── afn.go          # 功能码相关定义
+├── timestamp.go    # 只保留时间戳相关定义，因为S1流程不需要密码 
+├── measurement.go         # 数据域相关定义
+├── frame.go        # 帧结构相关定义
+├── logger.go       # 日志接口定义
+└── bcd.go          # BCD编解码工具
+</document_content>
+</document></documents>
